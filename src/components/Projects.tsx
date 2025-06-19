@@ -40,8 +40,16 @@ const initialProjects: Project[] = [
     image: "/assets/rtemplate.png",
     type: "frontend",
   },
-  {
+   {
     id: "4",
+    title: "E-commerce Template",
+    description: "A responsive React-based e-commerce frontend using a template and integrated with a Fake API for product and cart simulation.",
+    link: "https://react-template-seven-ochre.vercel.app/",
+    image: "/assets/rt.png",
+    type: "frontend",
+  },
+  {
+    id: "5",
     title: "School Management API",
     description: "A Laravel-based API for managing school records, including student profiles and attendance tracking.",
     link: "#",
