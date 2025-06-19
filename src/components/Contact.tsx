@@ -29,7 +29,6 @@ export default function Contact() {
     track("Contact Section Viewed");
   }, []);
 
-
   const socialItemVariants = {
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0 },
@@ -37,7 +36,7 @@ export default function Contact() {
 
   return (
     <section id="contact" className="py-16 bg-gray-50">
-      <div className="px-6 sm:px-8">
+      <div className="px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -48,11 +47,11 @@ export default function Contact() {
             duration: 0.7,
           }}
           viewport={{ once: true }}
-          className="max-w-7xl mx-auto bg-white rounded-3xl shadow-lg px-8"
+          className="max-w-7xl mx-auto bg-white rounded-3xl shadow-lg px-4 sm:px-8"
         >
-          <div className="flex p-8 flex-col md:flex-row items-center md:justify-between gap-8 sm:gap-10">
-            {/* Left side: Text + Email button */}
-            <div className="text-center px-8 md:text-left max-w-lg">
+          <div className="flex flex-col md:flex-row items-center md:justify-between gap-10 p-8">
+            {/* Left Side */}
+            <div className="text-center md:text-left max-w-lg">
               <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-6">
                 Get in Touch
               </h2>
@@ -62,22 +61,22 @@ export default function Contact() {
               </p>
               <motion.a
                 href="mailto:thoeurn.ratha.kh@gmail.com"
-                className="inline-block bg-indigo-600 text-white font-semibold py-3 px-8 rounded-xl shadow-md hover:bg-indigo-700 transition"
+                className="inline-block bg-indigo-600 text-white font-semibold py-3 px-6 sm:px-8 rounded-xl shadow-md hover:bg-indigo-700 transition"
                 whileHover={{
                   scale: 1.05,
                   transition: { type: "spring", stiffness: 300, damping: 10 },
                 }}
                 whileTap={{ scale: 0.95 }}
                 aria-label="Send email"
-                onClick={() => track("Email Clicked")} // Track email clicks
+                onClick={() => track("Email Clicked")}
               >
                 Email Me
               </motion.a>
             </div>
 
-            {/* Right side: Social links */}
+            {/* Right Side */}
             <motion.div
-              className="flex px-8 space-x-6 sm:space-x-8"
+              className="flex flex-wrap justify-center gap-6 sm:gap-8"
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
@@ -95,7 +94,7 @@ export default function Contact() {
                     scale: 1.1,
                     transition: { type: "spring", stiffness: 300, damping: 10 },
                   }}
-                  onClick={() => track(`${name} Clicked`)} // Track social link clicks
+                  onClick={() => track(`${name} Clicked`)}
                 >
                   {icon}
                 </motion.a>
