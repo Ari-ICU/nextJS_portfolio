@@ -48,8 +48,16 @@ const initialProjects: Project[] = [
     image: "/assets/rt.png",
     type: "frontend",
   },
-  {
+   {
     id: "5",
+    title: "Tic Tac Toe Game",
+    description: "A simple and interactive Tic Tac Toe game built with React.js, featuring responsive design and clean state management.",
+    link: "https://github.com/Ari-ICU/JS_Tic-Tac-Toe",
+    image: "/assets/ox.png",
+    type: "frontend",
+  },
+  {
+    id: "6",
     title: "School Management API",
     description: "A Laravel-based API for managing school records, including student profiles and attendance tracking.",
     link: "#",
