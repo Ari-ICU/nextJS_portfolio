@@ -8,7 +8,7 @@ import { inject, track } from "@vercel/analytics";
 const socials = [
   {
     name: "GitHub",
-    url: "https://github.com/thoeurn-ratha",
+    url: "https://github.com/Ari-ICU",
     icon: <Github size={28} />,
   },
   {
