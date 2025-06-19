@@ -23,7 +23,7 @@ export default function ProjectCard({ project }: Props) {
     <div
       className={`relative rounded-2xl shadow-lg overflow-hidden
         hover:shadow-2xl hover:scale-[1.03] transition-transform duration-300 cursor-pointer
-        w-full max-w-sm bg-white
+        w-full max-w-sm mx-auto bg-white
         ${isFrontend ? "border-l-4 border-indigo-500" : "border-t-4 border-emerald-500"}`}
     >
       <div className="relative h-52 overflow-hidden rounded-t-2xl">
@@ -56,7 +56,7 @@ export default function ProjectCard({ project }: Props) {
           </span>
         </div>
         <h3 className="text-2xl font-bold text-gray-900 line-clamp-2">{project.title}</h3>
-        <p className="text-gray-700 text-base line-clamp-3">{project.description}</p>
+        <p className="text-gray-700 text-base line-clamp-2">{project.description}</p>
       </div>
     </div>
   );
