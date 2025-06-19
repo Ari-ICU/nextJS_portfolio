@@ -44,42 +44,11 @@ const initialProjects: Project[] = [
     id: "4",
     title: "School Management API",
     description: "A Laravel-based API for managing school records, including student profiles and attendance tracking.",
-    link: "https://example.com",
-    image: "/placeholder.jpg",
+    link: "#",
+    image: "/assets/api.png",
     type: "backend",
   },
-  {
-    id: "5",
-    title: "Task Management Dashboard",
-    description: "A client-side task management app built with React and Redux Toolkit, featuring drag-and-drop functionality and local storage.",
-    link: "https://example.com",
-    image: "/placeholder.jpg",
-    type: "frontend",
-  },
-  {
-    id: "6",
-    title: "Event Booking Platform",
-    description: "A Next.js-based client-side application for booking events, with Tailwind CSS for styling and Firebase for real-time data.",
-    link: "https://example.com",
-    image: "/placeholder.jpg",
-    type: "frontend",
-  },
-  {
-    id: "7",
-    title: "Student Portal Dashboard",
-    description: "A responsive dashboard for students to view grades and schedules, built with React, TypeScript, and Material-UI, developed as a RUPP capstone project.",
-    link: "https://example.com",
-    image: "/placeholder.jpg",
-    type: "frontend",
-  },
-  {
-    id: "8",
-    title: "Weather Forecast App",
-    description: "A client-side weather app using Next.js and the OpenWeatherMap API, with dynamic UI updates and Tailwind CSS for styling.",
-    link: "https://example.com",
-    image: "/placeholder.jpg",
-    type: "frontend",
-  },
+  
 ];
 
 const containerVariants = {
@@ -88,11 +57,10 @@ const containerVariants = {
 };
 
 
-
 export default function Projects() {
   const [projects] = useState(initialProjects);
   const [currentPage, setCurrentPage] = useState(1);
-  const projectsPerPage = 6;
+  const projectsPerPage = 3;
 
   // Calculate pagination
   const totalPages = Math.ceil(projects.length / projectsPerPage);
@@ -134,7 +102,7 @@ export default function Projects() {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 justify-center items-center gap-6 sm:gap-8"
         >
           {currentProjects.map((project) => (
-            <motion.div key={project.id} >
+            <motion.div key={project.id}>
               <ProjectCard project={project} />
             </motion.div>
           ))}
