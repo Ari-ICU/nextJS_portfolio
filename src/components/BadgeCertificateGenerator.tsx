@@ -89,7 +89,7 @@ const certificates = [
 export default function BadgeCertificateGenerator() {
   const badgeScrollRef = useRef(null);
   const certificateScrollRef = useRef(null);
-  const [showPdfModal, setShowPdfModal] = useState(null);
+  const [showPdfModal, setShowPdfModal] = useState<string | null>(null);
 
   // Analytics tracking
   useEffect(() => {
