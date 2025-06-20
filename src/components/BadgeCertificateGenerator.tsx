@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Share2, ExternalLink } from "lucide-react";
 import Image from "next/image";
 import { inject, track } from "@vercel/analytics";
 
-// Badge and certificate data remain unchanged
+// Badge and certificate data
 const badges = [
   {
     id: "1",
@@ -87,11 +87,9 @@ const certificates = [
 ];
 
 export default function BadgeCertificateGenerator() {
-  const badgeScrollRef = useRef<HTMLDivElement | null>(null);
-  const certificateScrollRef = useRef<HTMLDivElement | null>(null);
-  const [showPdfModal, setShowPdfModal] = useState<string | null>(null);
-  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [isScrolling, setIsScrolling] = useState(true);
+  const badgeScrollRef = useRef(null);
+  const certificateScrollRef = useRef(null);
+  const [showPdfModal, setShowPdfModal] = useState(null);
 
   // Analytics tracking
   useEffect(() => {
@@ -99,85 +97,23 @@ export default function BadgeCertificateGenerator() {
     track("Badges Certificates Viewed");
   }, []);
 
-  // Auto-scrolling logic with seamless infinite loop
-  useEffect(() => {
-    const badgeContainer = badgeScrollRef.current;
-    const certificateContainer = certificateScrollRef.current;
-    if (!badgeContainer || !certificateContainer) return;
-
-    const scrollSpeed = 1; // Adjust scroll speed
-    const scroll = () => {
-      if (!isScrolling) return;
-
-      // Calculate the width of the original badge and certificate items
-      const badgeItemWidth = badgeContainer.querySelector('[role="listitem"]')?.getBoundingClientRect().width || 250;
-      const certificateItemWidth = certificateContainer.querySelector('[role="listitem"]')?.getBoundingClientRect().width || 250;
-      const badgeOriginalWidth = badgeItemWidth * badges.length + badges.length * 24; // Account for gap-6 (24px)
-      const certificateOriginalWidth = certificateItemWidth * certificates.length + certificates.length * 24;
-
-      // Badge scrolling
-      badgeContainer.scrollLeft += scrollSpeed;
-      if (badgeContainer.scrollLeft >= badgeOriginalWidth) {
-        badgeContainer.scrollLeft = 0; // Reset to start for seamless loop
-      }
-
-      // Certificate scrolling
-      certificateContainer.scrollLeft += scrollSpeed;
-      if (certificateContainer.scrollLeft >= certificateOriginalWidth) {
-        certificateContainer.scrollLeft = 0; // Reset to start for seamless loop
-      }
-    };
-
-    // Start scrolling
-    scrollIntervalRef.current = setInterval(scroll, 20);
-
-    // Pause scrolling on hover
-    const handleMouseEnter = () => setIsScrolling(false);
-    const handleMouseLeave = () => setIsScrolling(true);
-
-    // Pause scrolling on manual scroll
-    const handleScroll = () => {
-      setIsScrolling(false);
-      // Resume scrolling after 2 seconds of inactivity
-      if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
-      scrollIntervalRef.current = setTimeout(() => {
-        setIsScrolling(true);
-        scrollIntervalRef.current = setInterval(scroll, 20);
-      }, 2000);
-    };
-
-    badgeContainer.addEventListener("mouseenter", handleMouseEnter);
-    badgeContainer.addEventListener("mouseleave", handleMouseLeave);
-    badgeContainer.addEventListener("scroll", handleScroll);
-    certificateContainer.addEventListener("mouseenter", handleMouseEnter);
-    certificateContainer.addEventListener("mouseleave", handleMouseLeave);
-    certificateContainer.addEventListener("scroll", handleScroll);
-
-    // Cleanup
-    return () => {
-      if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
-      badgeContainer.removeEventListener("mouseenter", handleMouseEnter);
-      badgeContainer.removeEventListener("mouseleave", handleMouseLeave);
-      badgeContainer.removeEventListener("scroll", handleScroll);
-      certificateContainer.removeEventListener("mouseenter", handleMouseEnter);
-      certificateContainer.removeEventListener("mouseleave", handleMouseLeave);
-      certificateContainer.removeEventListener("scroll", handleScroll);
-    };
-  }, [isScrolling]);
-
   // Download badge or PDF
-  const downloadAsset = async (
-    achievement: (typeof badges)[0] | (typeof certificates)[0]
-  ) => {
+  type Badge = typeof badges[number];
+  type Certificate = typeof certificates[number];
+  type Achievement = Badge | Certificate;
+
+  function isCertificate(achievement: Achievement): achievement is Certificate {
+    return (achievement as Certificate).pdf !== undefined;
+  }
+
+  const downloadAsset = async (achievement: Achievement) => {
     try {
-      const filePath =
-        achievement.type === "pdf"
-          ? `/assets/${(achievement as (typeof certificates)[0]).pdf}`
-          : `/assets/${(achievement as (typeof badges)[0]).image}`;
-      const fileName =
-        achievement.type === "pdf"
-          ? `${achievement.title.replace(/\s+/g, "_")}_Certificate.pdf`
-          : `${achievement.title.replace(/\s+/g, "_")}_Badge.png`;
+      const filePath = isCertificate(achievement)
+        ? `/assets/${achievement.pdf}`
+        : `/assets/${achievement.image}`;
+      const fileName = isCertificate(achievement)
+        ? `${achievement.title.replace(/\s+/g, "_")}_Certificate.pdf`
+        : `${achievement.title.replace(/\s+/g, "_")}_Badge.png`;
       const response = await fetch(filePath);
       if (!response.ok) throw new Error("File not found");
       const blob = await response.blob();
@@ -189,12 +125,9 @@ export default function BadgeCertificateGenerator() {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      track(
-        `${achievement.type === "pdf" ? "Certificate" : "Badge"} Downloaded`,
-        {
-          title: achievement.title,
-        }
-      );
+      track(`${isCertificate(achievement) ? "Certificate" : "Badge"} Downloaded`, {
+        title: achievement.title,
+      });
     } catch (error) {
       console.error("Failed to download asset:", error);
       alert("Failed to download. Please try again.");
@@ -202,9 +135,7 @@ export default function BadgeCertificateGenerator() {
   };
 
   // Share badge
-  const shareBadge = (
-    achievement: (typeof badges)[0] | (typeof certificates)[0]
-  ) => {
+  const shareBadge = (achievement: Achievement) => {
     const shareText = `I earned the ${achievement.title} badge! ${
       achievement.description
     }${
@@ -238,34 +169,32 @@ export default function BadgeCertificateGenerator() {
     <motion.section
       viewport={{ once: true }}
       id="badges-certificates"
-      className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-12 py-8 sm:py-12"
+      className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4 py-6 sm:py-8 lg:py-12"
       role="region"
       aria-labelledby="badges-certificates-title"
     >
-      <div className="max-w-7xl mx-auto px-8 flex flex-col gap-8 sm:gap-10 lg:gap-12 items-center">
+      <div className="w-full max-w-[90rem] mx-auto flex flex-col gap-6 sm:gap-8 lg:gap-10 items-center">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
-          className="w-full text-center space-y-4 sm:space-y-6"
+          className="w-full text-center space-y-3 sm:space-y-4 px-2 sm:px-4"
         >
           <h2
             id="badges-certificates-title"
-            className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900"
+            className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900"
           >
             Badges & Certificates
           </h2>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto">
-            Explore my Fortinet, AWS, and Cisco certifications, showcasing
-            expertise in network security, cloud computing, and data
-            engineering.
+          <p className="text-xs sm:text-sm lg:text-base text-gray-600 max-w-xl mx-auto">
+            Explore my Fortinet, AWS, and Cisco certifications, showcasing expertise in network security, cloud computing, and data engineering.
           </p>
         </motion.div>
 
         {/* Badges Section */}
-        <div className="w-full relative">
-          <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">
+        <div className="w-full px-2 sm:px-4">
+          <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
             Badges
           </h3>
           <motion.div
@@ -273,15 +202,15 @@ export default function BadgeCertificateGenerator() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1 }}
-            className="w-full overflow-x-hidden py-4 relative"
-            style={{ scrollBehavior: "smooth" }}
+            className="w-full overflow-x-auto py-3 sm:py-4 snap-x snap-mandatory"
+            style={{ scrollBehavior: "smooth", WebkitOverflowScrolling: "touch" }}
             role="list"
             aria-label="Certification badges"
           >
-            <div className="flex gap-6">
+            <div className="flex gap-3 sm:gap-4">
               {badges.map((badge) => (
                 <motion.div
-                  key={`original-${badge.id}`}
+                  key={badge.id}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   whileHover={{
@@ -289,104 +218,42 @@ export default function BadgeCertificateGenerator() {
                     boxShadow: "0 10px 20px rgba(0,0,0,0.2)",
                   }}
                   transition={{ duration: 0.3 }}
-                  className="min-w-[200px] sm:min-w-[250px] bg-white rounded-xl shadow-lg p-4 flex flex-col items-center relative"
+                  className="min-w-[140px] sm:min-w-[180px] lg:min-w-[220px] max-w-[min(90vw,220px)] bg-white rounded-xl shadow-lg p-3 sm:p-4 flex flex-col items-center snap-center"
                   role="listitem"
                 >
                   <Image
                     src={`/assets/${badge.image}`}
                     alt={`${badge.title} badge`}
-                    width={180}
-                    height={180}
-                    className="object-contain rounded-full"
+                    width={100}
+                    height={100}
+                    className="object-contain w-[80px] h-[80px] sm:w-[100px] sm:h-[100px]"
                     loading="lazy"
                   />
-                  <div className="mt-3 text-center space-y-2">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-800 line-clamp-2">
+                  <div className="mt-2 sm:mt-3 text-center space-y-1 sm:space-y-2">
+                    <h3 className="text-xs sm:text-sm lg:text-base font-semibold text-gray-800 line-clamp-2">
                       {badge.title}
                     </h3>
-                    <p className="text-xs sm:text-sm text-gray-500 line-clamp-2">
+                    <p className="text-[10px] sm:text-xs text-gray-500 line-clamp-2">
                       {badge.description}
                     </p>
                   </div>
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-2 sm:mt-3 flex gap-1 sm:gap-2">
                     <motion.button
                       onClick={() => shareBadge(badge)}
                       whileTap={{ scale: 0.95 }}
-                      className="p-2 bg-amber-500 rounded-full hover:bg-amber-600 transition"
+                      className="p-1.5 sm:p-2 bg-amber-500 rounded-full hover:bg-amber-600 transition"
                       aria-label={`Share ${badge.title} badge`}
                     >
-                      <Share2 className="w-4 h-4 text-white" />
+                      <Share2 className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                     </motion.button>
                     <motion.button
                       onClick={() => downloadAsset(badge)}
                       whileTap={{ scale: 0.95 }}
-                      className="p-2 bg-amber-500 rounded-full hover:bg-amber-600 transition"
+                      className="p-1.5 sm:p-2 bg-amber-600 rounded-full hover:bg-amber-700 transition"
                       aria-label={`Download ${badge.title} badge image`}
                     >
                       <svg
-                        className="w-4 h-4 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                        />
-                      </svg>
-                    </motion.button>
-                  </div>
-                </motion.div>
-              ))}
-              {badges.map((badge) => (
-                <motion.div
-                  key={`duplicate-${badge.id}`}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  whileHover={{
-                    scale: 1.05,
-                    boxShadow: "0 10px 20px rgba(0,0,0,0.2)",
-                  }}
-                  transition={{ duration: 0.3 }}
-                  className="min-w-[200px] sm:min-w-[250px] bg-white rounded-xl shadow-lg p-4 flex flex-col items-center relative"
-                  role="listitem"
-                >
-                  <Image
-                    src={`/assets/${badge.image}`}
-                    alt={`${badge.title} badge`}
-                    width={180}
-                    height={180}
-                    className="object-contain rounded-full"
-                    loading="lazy"
-                  />
-                  <div className="mt-3 text-center space-y-2">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-800 line-clamp-2">
-                      {badge.title}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-gray-500 line-clamp-2">
-                      {badge.description}
-                    </p>
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    <motion.button
-                      onClick={() => shareBadge(badge)}
-                      whileTap={{ scale: 0.95 }}
-                      className="p-2 bg-amber-500 rounded-full hover:bg-amber-600 transition"
-                      aria-label={`Share ${badge.title} badge`}
-                    >
-                      <Share2 className="w-4 h-4 text-white" />
-                    </motion.button>
-                    <motion.button
-                      onClick={() => downloadAsset(badge)}
-                      whileTap={{ scale: 0.95 }}
-                      className="p-2 bg-amber-500 rounded-full hover:bg-amber-600 transition"
-                      aria-label={`Download ${badge.title} badge image`}
-                    >
-                      <svg
-                        className="w-4 h-4 text-white"
+                        className="w-3 h-3 sm:w-4 sm:h-4 text-white"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -408,8 +275,8 @@ export default function BadgeCertificateGenerator() {
         </div>
 
         {/* Certificates Section */}
-        <div className="w-full relative">
-          <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">
+        <div className="w-full px-2 sm:px-4">
+          <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800 mb-3 sm:mb-4">
             Certificates
           </h3>
           <motion.div
@@ -417,15 +284,15 @@ export default function BadgeCertificateGenerator() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1 }}
-            className="w-full overflow-x-hidden py-4 relative"
-            style={{ scrollBehavior: "smooth" }}
+            className="w-full overflow-x-auto py-3 sm:py-4 snap-x snap-mandatory"
+            style={{ scrollBehavior: "smooth", WebkitOverflowScrolling: "touch" }}
             role="list"
             aria-label="Certification certificates"
           >
-            <div className="flex gap-6">
+            <div className="flex gap-3 sm:gap-4">
               {certificates.map((certificate) => (
                 <motion.div
-                  key={`original-${certificate.id}`}
+                  key={certificate.id}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   whileHover={{
@@ -433,42 +300,42 @@ export default function BadgeCertificateGenerator() {
                     boxShadow: "0 10px 20px rgba(0,0,0,0.2)",
                   }}
                   transition={{ duration: 0.3 }}
-                  className="min-w-[200px] sm:min-w-[250px] bg-white rounded-xl shadow-lg p-4 flex flex-col items-center relative"
+                  className="min-w-[140px] sm:min-w-[180px] lg:min-w-[220px] max-w-[min(90vw,220px)] bg-white rounded-xl shadow-lg p-3 sm:p-4 flex flex-col items-center snap-center"
                   role="listitem"
                 >
                   <Image
                     src={`/assets/${certificate.image}`}
                     alt={`${certificate.title} certificate`}
-                    width={180}
-                    height={180}
-                    className="object-contain"
+                    width={100}
+                    height={100}
+                    className="object-contain w-[80px] h-[80px] sm:w-[100px] sm:h-[100px]"
                     loading="lazy"
                   />
-                  <div className="mt-3 text-center space-y-2">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-800 line-clamp-2">
+                  <div className="mt-2 sm:mt-3 text-center space-y-1 sm:space-y-2">
+                    <h3 className="text-xs sm:text-sm lg:text-base font-semibold text-gray-800 line-clamp-2">
                       {certificate.title}
                     </h3>
-                    <p className="text-xs sm:text-sm text-gray-500 line-clamp-2">
+                    <p className="text-[10px] sm:text-xs text-gray-500 line-clamp-2">
                       {certificate.description}
                     </p>
                   </div>
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-2 sm:mt-3 flex gap-1 sm:gap-2 flex-wrap justify-center">
                     <motion.button
                       onClick={() => shareBadge(certificate)}
                       whileTap={{ scale: 0.95 }}
-                      className="p-2 bg-amber-500 rounded-full hover:bg-amber-600 transition"
+                      className="p-1.5 sm:p-2 bg-amber-500 rounded-full hover:bg-amber-600 transition"
                       aria-label={`Share ${certificate.title} certificate`}
                     >
-                      <Share2 className="w-4 h-4 text-white" />
+                      <Share2 className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                     </motion.button>
                     <motion.button
                       onClick={() => viewPdf(certificate.pdf)}
                       whileTap={{ scale: 0.95 }}
-                      className="p-2 bg-amber-500 rounded-full hover:bg-amber-600 transition"
+                      className="p-1.5 sm:p-2 bg-amber-500 rounded-full hover:bg-amber-600 transition"
                       aria-label={`View ${certificate.title} certificate`}
                     >
                       <svg
-                        className="w-4 h-4 text-white"
+                        className="w-3 h-3 sm:w-4 sm:h-4 text-white"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -491,11 +358,11 @@ export default function BadgeCertificateGenerator() {
                     <motion.button
                       onClick={() => downloadAsset(certificate)}
                       whileTap={{ scale: 0.95 }}
-                      className="p-2 bg-amber-500 rounded-full hover:bg-amber-600 transition"
+                      className="p-1.5 sm:p-2 bg-amber-600 rounded-full hover:bg-amber-700 transition"
                       aria-label={`Download ${certificate.title} certificate`}
                     >
                       <svg
-                        className="w-4 h-4 text-white"
+                        className="w-3 h-3 sm:w-4 sm:h-4 text-white"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -515,111 +382,10 @@ export default function BadgeCertificateGenerator() {
                         target="_blank"
                         rel="noopener noreferrer"
                         whileTap={{ scale: 0.95 }}
-                        className="p-2 bg-amber-500 rounded-full hover:bg-amber-600 transition"
+                        className="p-1.5 sm:p-2 bg-amber-500 rounded-full hover:bg-amber-600 transition"
                         aria-label={`Verify ${certificate.title} badge on Credly`}
                       >
-                        <ExternalLink className="w-4 h-4 text-white" />
-                      </motion.a>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-              {certificates.map((certificate) => (
-                <motion.div
-                  key={`duplicate-${certificate.id}`}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  whileHover={{
-                    scale: 1.05,
-                    boxShadow: "0 10px 20px rgba(0,0,0,0.2)",
-                  }}
-                  transition={{ duration: 0.3 }}
-                  className="min-w-[200px] sm:min-w-[250px] bg-white rounded-xl shadow-lg p-4 flex flex-col items-center relative"
-                  role="listitem"
-                >
-                  <Image
-                    src={`/assets/${certificate.image}`}
-                    alt={`${certificate.title} certificate`}
-                    width={180}
-                    height={180}
-                    className="object-contain rounded-full"
-                    loading="lazy"
-                  />
-                  <div className="mt-3 text-center space-y-2">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-800 line-clamp-2">
-                      {certificate.title}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-gray-500 line-clamp-2">
-                      {certificate.description}
-                    </p>
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    <motion.button
-                      onClick={() => shareBadge(certificate)}
-                      whileTap={{ scale: 0.95 }}
-                      className="p-2 bg-amber-500 rounded-full hover:bg-amber-600 transition"
-                      aria-label={`Share ${certificate.title} certificate`}
-                    >
-                      <Share2 className="w-4 h-4 text-white" />
-                    </motion.button>
-                    <motion.button
-                      onClick={() => viewPdf(certificate.pdf)}
-                      whileTap={{ scale: 0.95 }}
-                      className="p-2 bg-amber-500 rounded-full hover:bg-amber-600 transition"
-                      aria-label={`View ${certificate.title} certificate`}
-                    >
-                      <svg
-                        className="w-4 h-4 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                        />
-                      </svg>
-                    </motion.button>
-                    <motion.button
-                      onClick={() => downloadAsset(certificate)}
-                      whileTap={{ scale: 0.95 }}
-                      className="p-2 bg-amber-500 rounded-full hover:bg-amber-600 transition"
-                      aria-label={`Download ${certificate.title} certificate`}
-                    >
-                      <svg
-                        className="w-4 h-4 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                        />
-                      </svg>
-                    </motion.button>
-                    {certificate.badgeUrl && (
-                      <motion.a
-                        href={certificate.badgeUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        whileTap={{ scale: 0.95 }}
-                        className="p-2 bg-amber-500 rounded-full hover:bg-amber-600 transition"
-                        aria-label={`Verify ${certificate.title} badge on Credly`}
-                      >
-                        <ExternalLink className="w-4 h-4 text-white" />
+                        <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                       </motion.a>
                     )}
                   </div>
@@ -636,22 +402,22 @@ export default function BadgeCertificateGenerator() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4"
           role="dialog"
           aria-label="PDF viewer"
         >
           <motion.div
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
-            className="bg-white rounded-lg p-4 w-full max-w-3xl h-[80vh] relative"
+            className="bg-white rounded-lg p-2 sm:p-4 w-full max-w-[95vw] sm:max-w-[80vw] lg:max-w-3xl h-[80vh] sm:h-[85vh] relative"
           >
             <button
               onClick={() => setShowPdfModal(null)}
-              className="absolute top-2 right-2 p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition"
+              className="absolute top-1 sm:top-2 right-1 sm:right-2 p-1.5 sm:p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition"
               aria-label="Close PDF viewer"
             >
               <svg
-                className="w-5 h-5 text-gray-800"
+                className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
