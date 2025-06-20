@@ -13,6 +13,7 @@
     "@next/bundle-analyzer": "^15.3.4",
     "@vercel/analytics": "^1.5.0",
     "framer-motion": "^12.18.1",
+    "jspdf": "^3.0.1",
     "lucide-react": "^0.518.0",
     "motion": "^12.18.1",
     "next": "^15.3.4",

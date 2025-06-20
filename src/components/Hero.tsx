@@ -31,7 +31,7 @@ export default function Hero() {
     <motion.section
       viewport={{ once: true }}
       id="home"
-      className="min-h-[80vh] sm:min-h-screen flex flex-col items-center justify-center bg-gradient-to-tr from-gray-900 via-gray-800 to-gray-900 text-white px-4 sm:px-6 lg:px-12 py-8 sm:py-12"
+      className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-tr from-gray-900 via-gray-800 to-gray-900 text-white px-4 sm:px-6 lg:px-12 py-8 sm:py-12"
     >
       <div className="max-w-full sm:max-w-3xl lg:max-w-7xl mx-auto flex flex-col md:flex-row gap-6 sm:gap-8 lg:gap-10 items-center justify-center">
         {/* Right Side - Image (Appears on top in mobile) */}

@@ -68,7 +68,7 @@ export default function About() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
           viewport={{ once: true }}
-          className="text-3xl sm:text-4xl font-extrabold text-center text-gray-900 mb-12 sm:mb-16"
+          className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-center text-gray-900 mb-12 sm:mb-16"
         >
           About Me
         </motion.h2>
@@ -90,7 +90,9 @@ export default function About() {
               aria-label="Profile picture placeholder"
               role="img"
             >
-                <Image src="/assets/p2.JPG" alt="" width={160} height={160} />
+            
+😐
+                {/* <Image src="/assets/p2.JPG" alt="" width={160} height={160} /> */}
             </div>
             <p className="text-white text-center text-base sm:text-lg leading-relaxed">
               Junior full-stack developer passionate about building modern web
